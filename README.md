@@ -24,7 +24,7 @@ sde                         8:64   0   2G  0 disk
 sdf                         8:80   0   2G  0 disk
 ```
 
-## За нулим супер блоки, на всякий случай
+За нулим супер блоки, на всякий случай
 ```
 sadmin@lp-ubn4:~$ sudo mdadm --zero-superblock --force /dev/sd{b,c,d,e,f}
 [sudo] password for sadmin:
@@ -50,6 +50,17 @@ mdadm: array /dev/md0 started.
 /dev/md0 - имя массива
 -l уровень массива
 -n количиство дисков
+
+Проверим, что массив создался
+```
+sadmin@lp-ubn4:~$ cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid4] [raid5] [raid6] [raid10] [linear]
+md0 : active raid5 sdf[4] sde[3] sdd[2] sdc[1] sdb[0]
+      8376320 blocks super 1.2 level 5, 512k chunk, algorithm 2 [5/5] [UUUUU]
+
+unused devices: <none>
+```
+
 
 
 
