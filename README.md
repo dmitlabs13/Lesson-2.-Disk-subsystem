@@ -24,5 +24,33 @@ sde                         8:64   0   2G  0 disk
 sdf                         8:80   0   2G  0 disk
 ```
 
+## За нулим супер блоки, на всякий случай
+```
+sadmin@lp-ubn4:~$ sudo mdadm --zero-superblock --force /dev/sd{b,c,d,e,f}
+[sudo] password for sadmin:
+mdadm: Unrecognised md component device - /dev/sdb
+mdadm: Unrecognised md component device - /dev/sdc
+mdadm: Unrecognised md component device - /dev/sdd
+mdadm: Unrecognised md component device - /dev/sde
+mdadm: Unrecognised md component device - /dev/sdf
+```
+
+Выбираем RAID5
+```
+sadmin@lp-ubn4:~$ sudo mdadm --create --verbose --force /dev/md0 -l 5 -n 5 /dev/sd{b,c,d,e,f}
+mdadm: layout defaults to left-symmetric
+mdadm: layout defaults to left-symmetric
+mdadm: chunk size defaults to 512K
+mdadm: size set to 2094080K
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md0 started.
+```
+--create создать массив
+--verbose подробный вывод выполнения
+/dev/md0 - имя массива
+-l уровень массива
+-n количиство дисков
+
+
 
 
