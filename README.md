@@ -99,7 +99,204 @@ Consistency Policy : resync
 
 
 ```
-*выключил машину и отключил один из дисков*
+*сломаем массив*
+```
+root@lp-ubn4:/home/sadmin# mdadm /dev/md127 --fail /dev/sde
+mdadm: set /dev/sde faulty in /dev/md127
+
+root@lp-ubn4:/home/sadmin# cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid4] [raid5] [raid6] [raid10] [linear]
+md127 : active (auto-read-only) raid5 sdf[4] sde[3](F) sdc[1] sdd[2] sdb[0]
+      8376320 blocks super 1.2 level 5, 512k chunk, algorithm 2 [5/4] [UUU_U]
+
+unused devices: <none>
+
+
+root@lp-ubn4:/home/sadmin# cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid4] [raid5] [raid6] [raid10] [linear]
+md127 : active (auto-read-only) raid5 sdf[4] sde[3](F) sdc[1] sdd[2] sdb[0]
+      8376320 blocks super 1.2 level 5, 512k chunk, algorithm 2 [5/4] [UUU_U]
+
+unused devices: <none>
+
+root@lp-ubn4:/home/sadmin# mdadm /dev/md127 --remove /dev/sde
+mdadm: hot removed /dev/sde from /dev/md127
+
+root@lp-ubn4:/home/sadmin# mdadm /dev/md127 --add /dev/sde
+mdadm: re-added /dev/sde
+
+root@lp-ubn4:/home/sadmin# cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid4] [raid5] [raid6] [raid10] [linear]
+md127 : active raid5 sde[3] sdf[4] sdc[1] sdd[2] sdb[0]
+      8376320 blocks super 1.2 level 5, 512k chunk, algorithm 2 [5/5] [UUUUU]
+
+unused devices: <none>
+
+
+```
+как-то у меня не сошлось результатом с методичкойю У меня после удаления диска и добавления обратно, система просто посчитала что что вернул тот же диск обратно. И никакого ребилда даже не делала.
+
+*создать таблицу, разделы и смотировать их в системе*
+```
+root@lp-ubn4:/home/sadmin# lsblk
+NAME                      MAJ:MIN RM SIZE RO TYPE  MOUNTPOINTS
+sda                         8:0    0  40G  0 disk
+├─sda1                      8:1    0   1M  0 part
+├─sda2                      8:2    0   2G  0 part  /boot
+└─sda3                      8:3    0  38G  0 part
+  └─ubuntu--vg-ubuntu--lv 252:0    0  19G  0 lvm   /
+sdb                         8:16   0   2G  0 disk
+└─md127                     9:127  0   8G  0 raid5
+sdc                         8:32   0   2G  0 disk
+└─md127                     9:127  0   8G  0 raid5
+sdd                         8:48   0   2G  0 disk
+└─md127                     9:127  0   8G  0 raid5
+sde                         8:64   0   2G  0 disk
+└─md127                     9:127  0   8G  0 raid5
+sdf                         8:80   0   2G  0 disk
+└─md127                     9:127  0   8G  0 raid5
+root@lp-ubn4:/home/sadmin# parted /dev/md127 mkpart primary ext4 0% 50%
+parted /dev/md127 mkpart primary fat32 50% 60%
+parted /dev/md127 mkpart primary fat32 60% 70%
+parted /dev/md127 mkpart primary fat32 70% 80%
+parted /dev/md127 mkpart primary fat32 80% 90%
+parted /dev/md127 mkpart primary fat32 90% 100%
+Information: You may need to update /etc/fstab.
+
+Information: You may need to update /etc/fstab.
+
+Information: You may need to update /etc/fstab.
+
+Information: You may need to update /etc/fstab.
+
+Information: You may need to update /etc/fstab.
+
+Information: You may need to update /etc/fstab.
+
+root@lp-ubn4:/home/sadmin# lsblk
+NAME                      MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINTS
+sda                         8:0    0   40G  0 disk
+├─sda1                      8:1    0    1M  0 part
+├─sda2                      8:2    0    2G  0 part  /boot
+└─sda3                      8:3    0   38G  0 part
+  └─ubuntu--vg-ubuntu--lv 252:0    0   19G  0 lvm   /
+sdb                         8:16   0    2G  0 disk
+└─md127                     9:127  0    8G  0 raid5
+  ├─md127p1               259:2    0    4G  0 part
+  ├─md127p2               259:3    0  818M  0 part
+  ├─md127p3               259:6    0  818M  0 part
+  ├─md127p4               259:7    0  818M  0 part
+  ├─md127p5               259:10   0  818M  0 part
+  └─md127p6               259:11   0  816M  0 part
+sdc                         8:32   0    2G  0 disk
+└─md127                     9:127  0    8G  0 raid5
+  ├─md127p1               259:2    0    4G  0 part
+  ├─md127p2               259:3    0  818M  0 part
+  ├─md127p3               259:6    0  818M  0 part
+  ├─md127p4               259:7    0  818M  0 part
+  ├─md127p5               259:10   0  818M  0 part
+  └─md127p6               259:11   0  816M  0 part
+sdd                         8:48   0    2G  0 disk
+└─md127                     9:127  0    8G  0 raid5
+  ├─md127p1               259:2    0    4G  0 part
+  ├─md127p2               259:3    0  818M  0 part
+  ├─md127p3               259:6    0  818M  0 part
+  ├─md127p4               259:7    0  818M  0 part
+  ├─md127p5               259:10   0  818M  0 part
+  └─md127p6               259:11   0  816M  0 part
+sde                         8:64   0    2G  0 disk
+└─md127                     9:127  0    8G  0 raid5
+  ├─md127p1               259:2    0    4G  0 part
+  ├─md127p2               259:3    0  818M  0 part
+  ├─md127p3               259:6    0  818M  0 part
+  ├─md127p4               259:7    0  818M  0 part
+  ├─md127p5               259:10   0  818M  0 part
+  └─md127p6               259:11   0  816M  0 part
+sdf                         8:80   0    2G  0 disk
+└─md127                     9:127  0    8G  0 raid5
+  ├─md127p1               259:2    0    4G  0 part
+  ├─md127p2               259:3    0  818M  0 part
+  ├─md127p3               259:6    0  818M  0 part
+  ├─md127p4               259:7    0  818M  0 part
+  ├─md127p5               259:10   0  818M  0 part
+  └─md127p6               259:11   0  816M  0 part
+
+
+
+root@lp-ubn4:/home/sadmin# sudo mkfs.ext4 /dev/md127p1
+mke2fs 1.47.0 (5-Feb-2023)
+Creating filesystem with 1046528 4k blocks and 261632 inodes
+Filesystem UUID: 28aed0dd-cbd6-4c50-a629-fd8d5bff5e4a
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+root@lp-ubn4:/home/sadmin# for i in $(seq 2 6); do sudo mkfs.vfat /dev/md127p$i; done
+mkfs.fat 4.2 (2021-01-31)
+mkfs.fat 4.2 (2021-01-31)
+mkfs.fat 4.2 (2021-01-31)
+mkfs.fat 4.2 (2021-01-31)
+mkfs.fat 4.2 (2021-01-31)
+root@lp-ubn4:/home/sadmin# mkdir -p /raid/part{1,2,3,4,5}
+root@lp-ubn4:/home/sadmin# ls raid
+ls: cannot access 'raid': No such file or directory
+root@lp-ubn4:/home/sadmin# ls /raid
+part1  part2  part3  part4  part5
+
+root@lp-ubn4:/home/sadmin# for i in $(seq 1 5); do sudo mount /dev/md127p$i /raid/part$i; done
+root@lp-ubn4:/home/sadmin# lsblk
+NAME                      MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINTS
+sda                         8:0    0   40G  0 disk
+├─sda1                      8:1    0    1M  0 part
+├─sda2                      8:2    0    2G  0 part  /boot
+└─sda3                      8:3    0   38G  0 part
+  └─ubuntu--vg-ubuntu--lv 252:0    0   19G  0 lvm   /
+sdb                         8:16   0    2G  0 disk
+└─md127                     9:127  0    8G  0 raid5
+  ├─md127p1               259:2    0    4G  0 part  /raid/part1
+  ├─md127p2               259:3    0  818M  0 part  /raid/part2
+  ├─md127p3               259:6    0  818M  0 part  /raid/part3
+  ├─md127p4               259:7    0  818M  0 part  /raid/part4
+  ├─md127p5               259:10   0  818M  0 part  /raid/part5
+  └─md127p6               259:11   0  816M  0 part
+sdc                         8:32   0    2G  0 disk
+└─md127                     9:127  0    8G  0 raid5
+  ├─md127p1               259:2    0    4G  0 part  /raid/part1
+  ├─md127p2               259:3    0  818M  0 part  /raid/part2
+  ├─md127p3               259:6    0  818M  0 part  /raid/part3
+  ├─md127p4               259:7    0  818M  0 part  /raid/part4
+  ├─md127p5               259:10   0  818M  0 part  /raid/part5
+  └─md127p6               259:11   0  816M  0 part
+sdd                         8:48   0    2G  0 disk
+└─md127                     9:127  0    8G  0 raid5
+  ├─md127p1               259:2    0    4G  0 part  /raid/part1
+  ├─md127p2               259:3    0  818M  0 part  /raid/part2
+  ├─md127p3               259:6    0  818M  0 part  /raid/part3
+  ├─md127p4               259:7    0  818M  0 part  /raid/part4
+  ├─md127p5               259:10   0  818M  0 part  /raid/part5
+  └─md127p6               259:11   0  816M  0 part
+sde                         8:64   0    2G  0 disk
+└─md127                     9:127  0    8G  0 raid5
+  ├─md127p1               259:2    0    4G  0 part  /raid/part1
+  ├─md127p2               259:3    0  818M  0 part  /raid/part2
+  ├─md127p3               259:6    0  818M  0 part  /raid/part3
+  ├─md127p4               259:7    0  818M  0 part  /raid/part4
+  ├─md127p5               259:10   0  818M  0 part  /raid/part5
+  └─md127p6               259:11   0  816M  0 part
+sdf                         8:80   0    2G  0 disk
+└─md127                     9:127  0    8G  0 raid5
+  ├─md127p1               259:2    0    4G  0 part  /raid/part1
+  ├─md127p2               259:3    0  818M  0 part  /raid/part2
+  ├─md127p3               259:6    0  818M  0 part  /raid/part3
+  ├─md127p4               259:7    0  818M  0 part  /raid/part4
+  ├─md127p5               259:10   0  818M  0 part  /raid/part5
+  └─md127p6               259:11   0  816M  0 part
+
+```
 
 
 
